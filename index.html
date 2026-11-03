@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b5e52">
+<meta name="description" content="Demo interactiva de Turnos por WhatsApp: turnos por chat para consultorios dentales. Datos ficticios.">
+<title>Turnos por WhatsApp · Demo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230e7c6b'/%3E%3Cpath d='M20 18c-5 0-8 4-8 9 0 6 3 9 4 15 1 5 2 8 5 8 3 0 3-4 4-8 1-3 2-5 4-5h2c2 0 3 2 4 5 1 4 1 8 4 8 3 0 4-3 5-8 1-6 4-9 4-15 0-5-3-9-8-9-4 0-6 2-9 2s-5-2-9-2z' fill='white'/%3E%3C/svg%3E">
+<style>
+:root{
+  --brand:#0e7c6b; --brand-ink:#0b5e52; --brand-soft:#e3f4ef; --brand-line:#bfe3d8;
+  --ink:#16302c; --ink-2:#3d524e; --muted:#6c7f7b; --line:#e3e9e7;
+  --bg:#f3f6f5; --card:#ffffff;
+  --chat-bg:#eaf0ee; --bubble-in:#ffffff; --bubble-out:#d6f1e8;
+  --amber:#a8650c; --amber-bg:#fff3dc; --amber-line:#f5d9a6;
+  --indigo:#4b47c9; --indigo-bg:#eeeefe; --indigo-line:#d4d3fb;
+  --green:#137a4b; --green-bg:#e3f6ec;
+  --rose:#b4234a; --rose-bg:#fdecf0;
+  --shadow-sm:0 1px 2px rgba(16,40,36,.06),0 1px 3px rgba(16,40,36,.06);
+  --shadow:0 10px 30px -12px rgba(16,40,36,.25),0 2px 6px rgba(16,40,36,.06);
+  --r:14px;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;overflow:hidden;
+}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+/* ---------- App shell ---------- */
+.app{height:100vh;height:100dvh;display:flex;flex-direction:column}
+.ribbon{
+  background:#fff1c7;color:#6b4a00;font-size:12.5px;font-weight:600;letter-spacing:.01em;
+  display:flex;align-items:center;justify-content:center;gap:8px;padding:6px 12px;
+  border-bottom:1px solid #f1dc9a;text-align:center;
+}
+.ribbon .dot{width:7px;height:7px;border-radius:50%;background:#e3a008;flex:none;box-shadow:0 0 0 3px rgba(227,160,8,.2)}
+.ribbon small{font-weight:500;opacity:.85}
+.topbar{background:var(--card);border-bottom:1px solid var(--line);position:relative;z-index:5}
+.bar{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 16px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.brand-mark{width:30px;height:30px;border-radius:9px;background:var(--brand);display:grid;place-items:center;flex:none}
+.brand-mark svg{width:18px;height:18px}
+.brand small{display:block;font-weight:500;font-size:11.5px;color:var(--muted);letter-spacing:0}
+.switch{
+  position:relative;display:grid;grid-template-columns:1fr 1fr;background:#edf2f0;border-radius:12px;padding:3px;
+  margin-left:auto;min-width:340px;
+}
+.switch .thumb{
+  position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:9px;background:var(--card);
+  box-shadow:var(--shadow-sm);transition:transform .35s var(--ease);
+}
+.switch[data-active="panel"] .thumb{transform:translateX(100%)}
+.switch button{
+  position:relative;z-index:1;padding:8px 10px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--muted);
+  display:flex;align-items:center;justify-content:center;gap:7px;transition:color .25s;white-space:nowrap;
+}
+.switch button[aria-selected="true"]{color:var(--brand-ink)}
+.switch svg{width:16px;height:16px;flex:none}
+.badge{
+  min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#e0335e;color:#fff;font-size:11px;font-weight:700;
+  display:inline-grid;place-items:center;transform:scale(0);transition:transform .3s var(--ease);
+}
+.badge.show{transform:scale(1)}
+.restart{
+  display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);
+  font-size:13.5px;font-weight:600;color:var(--ink-2);background:var(--card);transition:background .2s,border-color .2s;white-space:nowrap;
+}
+.restart:hover{background:#f6f9f8;border-color:#cfd9d6}
+.restart svg{width:16px;height:16px;transition:transform .5s var(--ease)}
+.restart:active svg{transform:rotate(-200deg)}
+
+.views{position:relative;flex:1;min-height:0;overflow:hidden;overflow:clip}
+.view{
+  position:absolute;inset:0;opacity:0;pointer-events:none;visibility:hidden;
+  transition:opacity .35s var(--ease),transform .4s var(--ease),visibility 0s linear .4s;
+}
+#view-chat{transform:translateX(-24px)}
+#view-panel{transform:translateX(24px);overflow-y:auto;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
+.view.active{opacity:1;transform:none !important;pointer-events:auto;visibility:visible;transition:opacity .35s var(--ease),transform .4s var(--ease),visibility 0s}
+
+/* ---------- Chat ---------- */
+#view-chat{display:flex;align-items:stretch;justify-content:center;gap:40px}
+.howto{display:none}
+.phone{
+  width:100%;height:100%;display:flex;flex-direction:column;background:var(--chat-bg);position:relative;overflow:hidden;
+}
+.chat-head{
+  display:flex;align-items:center;gap:11px;padding:10px 12px;background:var(--brand-ink);color:#fff;flex:none;
+  transition:background .5s;
+}
+.phone.night .chat-head{background:#1f2a44}
+.avatar{width:40px;height:40px;border-radius:50%;background:#fff;display:grid;place-items:center;flex:none}
+.avatar svg{width:22px;height:22px}
+.chat-title{min-width:0;flex:1}
+.chat-title b{display:block;font-size:15.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-title span{display:flex;white-space:nowrap;overflow:hidden;align-items:center;gap:6px;font-size:12.5px;opacity:.85}
+.chat-title span i{width:7px;height:7px;border-radius:50%;background:#7ee2c3;display:inline-block;flex:none}
+.phone.night .chat-title span i{background:#a5b4fc}
+.icon-btn{
+  width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#fff;flex:none;transition:background .2s;
+}
+.icon-btn:hover{background:rgba(255,255,255,.12)}
+.icon-btn svg{width:20px;height:20px}
+.recorridos-btn{display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;font-weight:600;flex:none}
+.recorridos-btn svg{width:15px;height:15px}
+
+.messages{
+  flex:1;min-height:0;overflow-y:auto;padding:14px 12px 8px;display:flex;flex-direction:column;gap:4px;
+  background-color:var(--chat-bg);
+  background-image:radial-gradient(rgba(14,124,107,.07) 1px,transparent 1.4px);
+  background-size:18px 18px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;transition:background-color .6s;
+}
+.phone.night .messages{background-color:#e6e8f1;background-image:radial-gradient(rgba(75,71,201,.08) 1px,transparent 1.4px)}
+.msg{display:flex;max-width:86%;animation:pop .35s var(--ease) both}
+.msg.in{align-self:flex-start}
+.msg.out{align-self:flex-end}
+.msg + .msg.in, .msg + .msg.out{margin-top:2px}
+.msg.in + .msg.out, .msg.out + .msg.in{margin-top:8px}
+.bubble{
+  position:relative;padding:8px 11px 6px;border-radius:12px;font-size:15px;line-height:1.38;box-shadow:0 1px 1px rgba(16,40,36,.08);
+  word-wrap:break-word;overflow-wrap:anywhere;
+}
+.msg.in .bubble{background:var(--bubble-in);border-top-left-radius:4px}
+.msg.out .bubble{background:var(--bubble-out);border-top-right-radius:4px}
+.bubble .sender{display:block;font-size:12.5px;font-weight:700;color:var(--indigo);margin-bottom:2px}
+.meta{display:flex;justify-content:flex-end;align-items:center;gap:3px;font-size:11px;color:var(--muted);margin-top:2px;margin-left:12px;float:right;position:relative;top:5px}
+.bubble::after{content:"";display:block;clear:both}
+.meta svg{width:16px;height:11px;color:#3aa6d9}
+.bubble.card-b{padding:6px 6px 6px;min-width:240px}
+.tcard{border-radius:9px;background:#f6faf9;border:1px solid var(--line);padding:10px 12px;margin-bottom:4px}
+.tcard.ok{background:var(--green-bg);border-color:#bfe8d1}
+.tcard.warn{background:var(--amber-bg);border-color:var(--amber-line)}
+.tcard.night{background:var(--indigo-bg);border-color:var(--indigo-line)}
+.tcard.off{background:#f3f4f5;border-color:#e2e5e7}
+.tcard-h{font-weight:700;font-size:14px;margin-bottom:7px;display:flex;align-items:center;gap:6px}
+.tcard ul{list-style:none;display:grid;gap:5px;font-size:14px;color:var(--ink-2)}
+.tcard li{display:flex;gap:8px;align-items:flex-start}
+.tcard li i{font-style:normal;width:18px;text-align:center;flex:none}
+.tcard.off ul{text-decoration:line-through;color:var(--muted)}
+.bubble .after{padding:4px 6px 0;display:block}
+
+.divider{align-self:center;margin:10px 0 6px;padding:5px 11px;border-radius:8px;background:rgba(255,255,255,.9);font-size:12px;font-weight:600;color:var(--ink-2);box-shadow:var(--shadow-sm);animation:pop .35s var(--ease) both}
+.note{
+  align-self:center;max-width:92%;margin:6px 0;padding:8px 12px;border-radius:10px;font-size:12.8px;line-height:1.4;text-align:center;
+  background:#fff8e1;color:#6b4a00;box-shadow:var(--shadow-sm);animation:pop .35s var(--ease) both;
+}
+.note.privacy{background:#fff;color:var(--ink-2);display:flex;gap:8px;align-items:flex-start;text-align:left}
+.note.privacy svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--brand)}
+.note.handoff{background:var(--indigo-bg);color:#2f2c8f;font-weight:600}
+.note.demo{background:transparent;box-shadow:none;color:var(--muted);font-size:12.5px;border:1px dashed #c4d1ce}
+.typing{align-self:flex-start;background:var(--bubble-in);border-radius:12px;border-top-left-radius:4px;padding:11px 13px;display:flex;gap:4px;box-shadow:0 1px 1px rgba(16,40,36,.08);animation:pop .25s var(--ease) both;margin-top:6px}
+.typing i{width:7px;height:7px;border-radius:50%;background:#9fb1ad;animation:blink 1.1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+
+/* quick replies */
+.tray{flex:none;background:var(--chat-bg);padding:0 10px;max-height:0;overflow:hidden;transition:max-height .4s var(--ease),padding .3s;}
+.phone.night .tray{background:#e6e8f1}
+.tray.open{max-height:62vh;padding:6px 10px 8px;overflow-y:auto}
+.tray-label{font-size:12px;font-weight:600;color:var(--muted);margin:2px 4px 7px;display:flex;align-items:center;gap:6px}
+.qr{display:flex;flex-wrap:wrap;gap:7px}
+.qr button{
+  padding:9px 14px;border-radius:999px;background:#fff;border:1.5px solid var(--brand-line);color:var(--brand-ink);
+  font-size:14.5px;font-weight:600;line-height:1.2;text-align:left;box-shadow:var(--shadow-sm);
+  transition:background .2s,border-color .2s,transform .15s;animation:rise .35s var(--ease) both;
+}
+.qr button small{display:block;font-size:11.5px;font-weight:500;color:var(--muted);margin-top:2px}
+.qr button:hover{background:var(--brand-soft);border-color:var(--brand)}
+.qr button:active{transform:scale(.97)}
+.qr button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.qr button.primary small{color:rgba(255,255,255,.8)}
+.qr button.primary:hover{background:var(--brand-ink)}
+.qr.slots button{min-width:74px;text-align:center}
+.picker{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
+.picker button{
+  display:flex;align-items:center;gap:12px;text-align:left;padding:10px 12px;border-radius:14px;background:#fff;border:1px solid var(--line);
+  box-shadow:var(--shadow-sm);transition:border-color .2s,transform .15s,box-shadow .2s;animation:rise .4s var(--ease) both;
+}
+.picker button:hover{border-color:var(--brand-line);box-shadow:var(--shadow)}
+.picker button:active{transform:scale(.985)}
+.picker .num{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:14px;flex:none;background:var(--brand-soft);color:var(--brand-ink)}
+.picker button > span:nth-child(2){min-width:0;flex:1}
+.picker b{display:block;font-size:14.5px;font-weight:650}
+.picker span.d{display:block;font-size:12.3px;color:var(--muted);margin-top:1px;line-height:1.3}
+.picker .chev{margin-left:auto;color:#a9b8b5;flex:none}
+.picker .chev svg{width:18px;height:18px}
+
+.composer{flex:none;display:flex;align-items:center;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:var(--chat-bg)}
+.phone.night .composer{background:#e6e8f1}
+.composer .field{flex:1;display:flex;align-items:center;background:#fff;border-radius:22px;padding:0 14px;height:44px;box-shadow:var(--shadow-sm)}
+.composer input{border:0;outline:0;background:transparent;font:inherit;font-size:15px;width:100%;color:var(--ink)}
+.composer input::placeholder{color:#93a4a0}
+.send{width:44px;height:44px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;flex:none;transition:transform .2s}
+.send svg{width:20px;height:20px}
+.send.pulse{animation:pulse .5s var(--ease)}
+
+.toast{
+  position:absolute;left:50%;top:70px;transform:translate(-50%,-14px);opacity:0;pointer-events:none;
+  background:#16302c;color:#fff;border-radius:14px;padding:10px 10px 10px 14px;font-size:13.5px;display:flex;align-items:center;gap:12px;
+  box-shadow:var(--shadow);transition:opacity .3s,transform .35s var(--ease);width:max-content;max-width:calc(100% - 24px);z-index:20;
+}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{background:#fff;color:var(--brand-ink);font-weight:700;font-size:13px;padding:7px 11px;border-radius:9px;white-space:nowrap}
+
+/* ---------- Panel ---------- */
+.panel{max-width:1180px;margin:0 auto;padding:18px 16px 60px}
+.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.panel-head h1{font-size:22px;letter-spacing:-.02em;line-height:1.2}
+.panel-head p{color:var(--muted);font-size:13.5px;margin-top:3px}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:#8a6200;background:#fff4d1;border:1px solid #f3df9b;border-radius:6px;padding:2px 6px;white-space:nowrap}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;box-shadow:var(--shadow-sm)}
+.kpi .k-l{font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.25;min-height:2.5em}
+.kpi .tag{font-size:9.5px;padding:2px 5px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.kpi .k-v{font-size:28px;font-weight:750;letter-spacing:-.02em;margin:4px 0 6px;font-variant-numeric:tabular-nums}
+.kpi.alert .k-v{color:var(--indigo)}
+.subnav{position:sticky;top:0;z-index:3;display:flex;gap:6px;padding:8px 0;background:linear-gradient(var(--bg) 80%,rgba(243,246,245,0));margin-bottom:4px;overflow-x:auto;scrollbar-width:none}
+.subnav::-webkit-scrollbar{display:none}
+.subnav a{flex:none;text-decoration:none;color:var(--ink-2);font-size:13.5px;font-weight:600;padding:7px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line)}
+.subnav a:hover{border-color:var(--brand-line);color:var(--brand-ink)}
+.section{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow-sm);padding:16px;margin-bottom:14px;scroll-margin-top:56px}
+.sec-h{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.sec-h h2{font-size:17px;letter-spacing:-.01em}
+.sec-h p{font-size:13px;color:var(--muted);margin-top:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:650;padding:3px 8px;border-radius:999px;white-space:nowrap;line-height:1.3}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.8}
+.c-ok{background:var(--green-bg);color:var(--green)}
+.c-pend{background:var(--amber-bg);color:var(--amber)}
+.c-night{background:var(--indigo-bg);color:var(--indigo)}
+.c-off{background:#eef0f1;color:#6b7378}
+.c-new{background:var(--rose-bg);color:var(--rose)}
+.c-care{background:var(--brand-soft);color:var(--brand-ink)}
+
+.daytabs{display:none;gap:6px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none}
+.daytabs::-webkit-scrollbar{display:none}
+.daytabs button{flex:1;min-width:58px;padding:8px 4px;border-radius:12px;border:1px solid var(--line);background:#fff;display:grid;gap:1px;justify-items:center;transition:background .2s,border-color .2s,color .2s}
+.daytabs button b{font-size:15px}
+.daytabs button span{font-size:11.5px;color:var(--muted);font-weight:600}
+.daytabs button em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--brand-ink)}
+.daytabs button[aria-selected="true"]{background:var(--brand-ink);border-color:var(--brand-ink);color:#fff}
+.daytabs button[aria-selected="true"] span,.daytabs button[aria-selected="true"] em{color:rgba(255,255,255,.85)}
+.daytabs button.has-new{box-shadow:0 0 0 2px #f8b4c6}
+.week{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.day{background:#f7faf9;border:1px solid var(--line);border-radius:14px;padding:8px;min-height:120px}
+.day-h{display:flex;align-items:baseline;justify-content:space-between;padding:2px 4px 8px;font-size:13px;font-weight:700}
+.day-h span{font-size:11.5px;color:var(--muted);font-weight:600}
+.appts{display:grid;gap:6px}
+.appt{background:#fff;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;padding:8px 9px;font-size:13px;transition:box-shadow .3s,border-color .3s}
+.appt.st-pend{border-left-color:#e0a03a}
+.appt.st-night{border-left-color:var(--indigo)}
+.appt.st-off{border-left-color:#c3c9cc;background:#fafbfb}
+.appt.st-off .a-name,.appt.st-off .a-sub{text-decoration:line-through;color:var(--muted)}
+.appt.is-new{animation:glow 2.4s var(--ease) 2;border-color:#f8b4c6}
+.a-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.a-time{font-weight:750;font-variant-numeric:tabular-nums;font-size:13.5px}
+.a-name{font-weight:650;margin-top:3px}
+.a-sub{color:var(--muted);font-size:12px;margin-top:1px;line-height:1.3}
+.a-foot{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;align-items:center}
+.a-src{font-size:11px;color:var(--brand-ink);font-weight:650;display:inline-flex;align-items:center;gap:3px}
+.a-src svg{width:12px;height:12px}
+.a-act{margin-top:7px;width:100%;padding:6px 8px;border-radius:8px;background:var(--indigo);color:#fff;font-size:12px;font-weight:700}
+.a-act:hover{filter:brightness(1.08)}
+.empty{font-size:12.5px;color:var(--muted);text-align:center;padding:16px 4px}
+
+.hlist{display:grid;gap:8px}
+.hitem{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:14px;background:#fff;transition:background .3s,border-color .3s}
+.hitem.is-new{animation:glow 2.4s var(--ease) 2;border-color:#f8b4c6}
+.hitem.done{background:#f8faf9}
+.h-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;flex:none;background:var(--indigo-bg);color:var(--indigo)}
+.h-body{flex:1;min-width:0}
+.h-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.h-top b{font-size:14.5px}
+.h-when{font-size:12px;color:var(--muted);margin-left:auto}
+.h-note{font-size:13px;color:var(--ink-2);margin-top:4px;line-height:1.4}
+.h-act{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.btn{padding:7px 12px;border-radius:9px;font-size:13px;font-weight:700;background:var(--brand);color:#fff;transition:filter .2s}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line)}
+.h-status{font-size:12.5px;color:var(--green);font-weight:650;display:flex;align-items:center;gap:5px}
+
+.report-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.big{border-radius:16px;padding:16px;border:1px solid var(--line);background:linear-gradient(160deg,#fff,#f6faf9)}
+.big.night{background:linear-gradient(160deg,#fff,var(--indigo-bg));border-color:var(--indigo-line)}
+.big.ok{background:linear-gradient(160deg,#fff,var(--green-bg));border-color:#c9ecd8}
+.big .b-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:18px;background:#fff;box-shadow:var(--shadow-sm)}
+.big .b-l{font-weight:700;font-size:14.5px;margin-top:12px}
+.big .b-v{font-size:44px;font-weight:800;letter-spacing:-.03em;line-height:1.05;margin:4px 0 4px;font-variant-numeric:tabular-nums}
+.big.night .b-v{color:var(--indigo)}
+.big.ok .b-v{color:var(--green)}
+.big .b-d{font-size:12.8px;color:var(--muted);line-height:1.4;margin-bottom:10px}
+.delta{font-size:12px;font-weight:700;color:var(--brand-ink);background:var(--brand-soft);padding:2px 7px;border-radius:6px;margin-left:6px;opacity:0;transition:opacity .3s}
+.delta.show{opacity:1}
+.minis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.mini{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.mini .m-v{font-size:20px;font-weight:750;font-variant-numeric:tabular-nums}
+.mini .m-l{font-size:12.3px;color:var(--muted);line-height:1.3;margin:2px 0 6px}
+.bump{animation:bump .6s var(--ease)}
+.foot-note{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5}
+
+/* ---------- Animations ---------- */
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,60%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+@keyframes pulse{50%{transform:scale(.88)}}
+@keyframes bump{30%{transform:scale(1.12)}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(224,51,94,0)}40%{box-shadow:0 0 0 5px rgba(224,51,94,.18)}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+
+/* ---------- Responsive ---------- */
+@media (max-width:899px){
+  .day{display:none}
+  .day.sel{display:block;min-height:0;background:transparent;border:0;padding:0}
+  .day.sel .day-h{display:none}
+  .week{grid-template-columns:1fr}
+  .daytabs{display:flex}
+  .appt{font-size:14px;padding:10px 12px}
+}
+@media (max-width:640px){
+  .bar{flex-wrap:wrap;gap:8px;padding:7px 12px 9px}
+  .brand-mark{width:26px;height:26px;border-radius:8px}
+  .brand{font-size:14.5px}
+  .switch button{padding:7px 8px}
+  .chat-head{padding:8px 10px}
+  .recorridos-btn{padding:9px}
+  .rb-t{display:none}
+  .picker{gap:6px}
+  .picker button{padding:8px 10px;border-radius:12px}
+  .picker .num{width:26px;height:26px;font-size:13px}
+  .picker b{font-size:14px}
+  .picker span.d{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+  .picker button > span:nth-child(2){min-width:0}
+  .switch{order:3;width:100%;min-width:0;margin-left:0}
+  .restart{margin-left:auto;padding:7px 10px}
+  .brand small{display:none}
+  .kpis{gap:8px}
+  .kpi{padding:10px}
+  .kpi .k-v{font-size:24px}
+  .kpi .k-l{font-size:11.5px}
+  .report-grid{grid-template-columns:1fr}
+  .minis{grid-template-columns:1fr}
+  .mini{display:flex;align-items:center;gap:10px}
+  .mini .m-v{order:2;margin-left:auto}
+  .mini .m-l{margin:0}
+  .mini .tag{order:3}
+  .panel{padding:14px 12px 60px}
+  .section{padding:14px 12px}
+  .big .b-v{font-size:40px}
+}
+@media (max-width:380px){
+  .brand > span:last-child{display:none}
+}
+@media (max-width:370px){
+  .switch button{font-size:12.5px;gap:5px}
+  .switch svg{display:none}
+  .ribbon small{display:none}
+}
+@media (min-width:900px){
+  #view-chat{padding:22px 24px}
+  .phone{max-width:410px;height:100%;max-height:820px;border-radius:30px;box-shadow:0 30px 60px -25px rgba(16,40,36,.35),0 0 0 9px #fff,0 0 0 10px var(--line);align-self:center}
+  .howto{display:flex;flex-direction:column;justify-content:center;max-width:340px;gap:18px}
+  .howto h2{font-size:26px;letter-spacing:-.02em;line-height:1.15}
+  .howto p{color:var(--ink-2);font-size:15px;line-height:1.5}
+  .howto ol{list-style:none;display:grid;gap:12px}
+  .howto li{display:flex;gap:12px;font-size:14.5px;color:var(--ink-2);line-height:1.45}
+  .howto li b{width:26px;height:26px;border-radius:8px;background:var(--brand-soft);color:var(--brand-ink);display:grid;place-items:center;flex:none;font-size:13px}
+  .howto .btn{align-self:flex-start;padding:10px 14px;font-size:14px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="ribbon" role="note"><span class="dot"></span>Demo: datos ficticios <small>· pacientes, turnos y números inventados</small></div>
+    <div class="bar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.2A8.5 8.5 0 1 1 21 12z"/><path d="M9 10.5h6M9 13.5h4"/></svg>
+        </span>
+        <span>Turnos por WhatsApp<small>Turnos por chat para consultorios</small></span>
+      </div>
+      <nav class="switch" id="switch" role="tablist" data-active="chat" aria-label="Cambiar de pantalla">
+        <span class="thumb" aria-hidden="true"></span>
+        <button role="tab" id="tab-chat" aria-selected="true" aria-controls="view-chat" data-view="chat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>
+          Chat del paciente
+        </button>
+        <button role="tab" id="tab-panel" aria-selected="false" aria-controls="view-panel" data-view="panel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+          Panel del consultorio <span class="badge" id="badge">0</span>
+        </button>
+      </nav>
+      <button class="restart" id="restart" title="Volver todo al inicio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+        Reiniciar demo
+      </button>
+    </div>
+  </header>
+
+  <main class="views">
+    <!-- PANTALLA 1: CHAT -->
+    <section class="view active" id="view-chat" role="tabpanel" aria-labelledby="tab-chat">
+      <aside class="howto">
+        <span class="tag">Demo: datos ficticios</span>
+        <h2>Así ven tus pacientes el chat de turnos</h2>
+        <p>Probá cada recorrido con los botones, como lo haría un paciente desde su celular.</p>
+        <ol>
+          <li><b>1</b><span>Elegí un recorrido debajo del chat.</span></li>
+          <li><b>2</b><span>Respondé tocando las opciones.</span></li>
+          <li><b>3</b><span>Pasá al panel y mirá cómo se actualiza la agenda del consultorio.</span></li>
+        </ol>
+        <button class="btn" data-go="panel">Ver panel del consultorio</button>
+      </aside>
+
+      <div class="phone" id="phone">
+        <div class="chat-head">
+          <div class="avatar" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#0e7c6b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 3C5 3 3.5 5 3.5 7.6c0 3 1.6 4.6 2.1 7.6.5 2.8 1 4.8 2.6 4.8 1.6 0 1.7-2.2 2.2-4.2.4-1.6 1-2.6 1.6-2.6s1.2 1 1.6 2.6c.5 2 .6 4.2 2.2 4.2 1.6 0 2.1-2 2.6-4.8.5-3 2.1-4.6 2.1-7.6C20.5 5 19 3 16.5 3c-2 0-3 1-4.5 1S9.5 3 7.5 3z"/></svg>
+          </div>
+          <div class="chat-title">
+            <b>Consultorio Dental Ejemplo</b>
+            <span id="chat-status"><i></i><em style="font-style:normal">En línea · Belgrano</em></span>
+          </div>
+          <button class="recorridos-btn" id="open-picker" title="Elegir otro recorrido">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+            <span class="rb-t">Recorridos</span>
+          </button>
+        </div>
+        <div class="messages" id="messages" aria-live="polite"></div>
+        <div class="tray" id="tray"></div>
+        <div class="composer">
+          <div class="field"><input id="composer" type="text" placeholder="Escribí un mensaje" readonly aria-label="Mensaje (en la demo se usan los botones)"></div>
+          <button class="send" id="send" aria-label="Enviar">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg>
+          </button>
+        </div>
+        <div class="toast" id="toast" role="status"><span id="toast-text"></span><button id="toast-btn">Ver panel</button></div>
+      </div>
+    </section>
+
+    <!-- PANTALLA 2: PANEL -->
+    <section class="view" id="view-panel" role="tabpanel" aria-labelledby="tab-panel">
+      <div class="panel" id="panel"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ===================== Datos base (todos ficticios) ===================== */
+const FAST = new URLSearchParams(location.search).has("rapido");
+const SPEED = FAST ? 0.12 : 1;
+const ADDRESS = "Calle Ficticia 1234, 3.º B, Belgrano";
+const PHONE = "11 5555-0000";
+const PROFS = {
+  mendez:  { name: "Dra. Paula Méndez", short: "Dra. Méndez", role: "Odontología general" },
+  ferrari: { name: "Dr. Tomás Ferrari", short: "Dr. Ferrari", role: "Ortodoncia y estética" }
+};
+const REASONS = ["Control y limpieza", "Caries o arreglo", "Ortodoncia", "Blanqueamiento", "Primera consulta"];
+const TIMES = ["09:00","09:30","10:00","10:30","11:00","11:30","12:00","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30"];
+const DAYS_S = ["Lun","Mar","Mié","Jue","Vie"];
+const DAYS_L = ["lunes","martes","miércoles","jueves","viernes"];
+const MONTHS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+
+const WEEK = (() => {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const add = ((8 - d.getDay()) % 7) || 7; // próximo lunes
+  d.setDate(d.getDate() + add);
+  return DAYS_S.map((s, i) => {
+    const x = new Date(d); x.setDate(d.getDate() + i);
+    return { idx: i, n: x.getDate(), month: MONTHS[x.getMonth()], short: `${s} ${x.getDate()}`,
+             long: `${DAYS_L[i]} ${x.getDate()} de ${MONTHS[x.getMonth()]}`, dayName: DAYS_L[i] };
+  });
+})();
+const MONTH_NOW = MONTHS[new Date().getMonth()];
+
+function seed() {
+  let id = 0;
+  const A = (day, time, name, reason, prof, status) => ({ id: "s" + (++id), day, time, name, reason, prof, status, via: "desk" });
+  return {
+    appts: [
+      A(0,"09:30","Ana Gómez","Control y limpieza","mendez","ok"),
+      A(0,"11:00","Jorge Ibáñez","Caries o arreglo","ferrari","ok"),
+      A(0,"16:00","Micaela Torres","Ortodoncia","ferrari","ok"),
+      Object.assign(A(1,"10:00","Sofía Herrera","Control y limpieza","mendez","pend"), { id: "sofia" }),
+      A(1,"15:30","Bruno Castro","Primera consulta","mendez","ok"),
+      Object.assign(A(2,"10:00","Diego Pereyra","Caries o arreglo","mendez","ok"), { id: "diego" }),
+      A(2,"17:30","Valentina Ruiz","Blanqueamiento","ferrari","pend"),
+      A(3,"09:00","Nicolás Vega","Control y limpieza","ferrari","ok"),
+      A(3,"14:00","Laura Benítez","Ortodoncia","ferrari","ok"),
+      A(4,"11:30","Florencia Acosta","Control y limpieza","mendez","pend")
+    ],
+    handoffs: [
+      { id: "h1", name: "Elena Suárez", reason: "Consulta clínica", note: "Escribió por una molestia. El chat no dio indicaciones y la pasó al equipo.", when: "Hace 40 min", status: "new" },
+      { id: "h2", name: "Ramiro Díaz", reason: "Presupuesto", note: "Quiere saber el costo de un tratamiento. El chat solo gestiona turnos y lo derivó.", when: "Hace 2 h", status: "new" }
+    ],
+    report: { outOfHours: 46, confirmed: 182, booked: 131, changes: 24, handoffs: 9 },
+    base: null,
+    unseen: 0,
+    fresh: new Set(),
+    focus: null,
+    selDay: 0
+  };
+}
+let S = seed(); S.base = { ...S.report };
+
+/* ===================== Utilidades ===================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const plural = n => n === 1 ? "1 turno" : n + " turnos";
+const initials = n => n.split(" ").map(p => p[0]).slice(0, 2).join("");
+class Abort extends Error {}
+let RUN = 0, pending = null, clock = 615;
+const guard = r => { if (r !== RUN) throw new Abort(); };
+const wait = (ms, r) => new Promise(res => setTimeout(res, ms * SPEED)).then(() => guard(r));
+const fmtClock = () => { const h = Math.floor(clock / 60) % 24, m = clock % 60; return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`; };
+const tick = () => { if (Math.random() < .45) clock++; };
+
+/* ===================== Chat UI ===================== */
+const msgs = $("#messages"), tray = $("#tray"), phone = $("#phone"), composer = $("#composer");
+const scrollDown = () => requestAnimationFrame(() => { msgs.scrollTop = msgs.scrollHeight; });
+
+const CHECKS = '<svg viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6l3 3 6-7"/><path d="M6 9l1 0 6-7"/></svg>';
+
+function addMsg(dir, html, opt = {}) {
+  tick();
+  const el = document.createElement("div");
+  el.className = "msg " + dir;
+  el.innerHTML = `<div class="bubble ${opt.card ? "card-b" : ""}">${opt.sender ? `<span class="sender">${esc(opt.sender)}</span>` : ""}${html}<span class="meta">${fmtClock()}${dir === "out" ? CHECKS : ""}</span></div>`;
+  msgs.appendChild(el); scrollDown(); return el;
+}
+function addNote(html, kind = "") {
+  const el = document.createElement("div");
+  el.className = "note " + kind; el.innerHTML = html; msgs.appendChild(el); scrollDown(); return el;
+}
+function addDivider(text) {
+  const el = document.createElement("div");
+  el.className = "divider"; el.textContent = text; msgs.appendChild(el); scrollDown();
+}
+let typingEl = null;
+function showTyping() { hideTyping(); typingEl = document.createElement("div"); typingEl.className = "typing"; typingEl.innerHTML = "<i></i><i></i><i></i>"; msgs.appendChild(typingEl); scrollDown(); }
+function hideTyping() { if (typingEl) { typingEl.remove(); typingEl = null; } }
+
+async function bot(r, html, opt = {}) {
+  showTyping();
+  const plain = html.replace(/<[^>]+>/g, "");
+  await wait(opt.delay ?? (450 + Math.min(plain.length * 9, 1000)), r);
+  hideTyping();
+  addMsg("in", opt.card ? html : html, opt);
+  await wait(220, r);
+}
+async function patient(r, text, opt = {}) {
+  if (opt.typed) await typeIn(r, text);
+  addMsg("out", esc(text));
+  await wait(380, r);
+}
+async function typeIn(r, text) {
+  composer.value = "";
+  const step = Math.max(12, Math.min(38, 1300 / text.length));
+  for (let i = 1; i <= text.length; i++) {
+    composer.value = text.slice(0, i);
+    composer.scrollLeft = composer.scrollWidth;
+    await wait(step, r);
+  }
+  await wait(220, r);
+  const s = $("#send"); s.classList.remove("pulse"); void s.offsetWidth; s.classList.add("pulse");
+  composer.value = "";
+}
+
+function closeTray() { tray.classList.remove("open"); tray.innerHTML = ""; }
+function openTray(label, inner, cls = "qr") {
+  tray.innerHTML = (label ? `<div class="tray-label">${label}</div>` : "") + `<div class="${cls}"></div>`;
+  const box = tray.lastElementChild;
+  inner(box);
+  tray.classList.add("open");
+  tray.scrollTop = 0;
+  setTimeout(scrollDown, 60);
+  return box;
+}
+
+/** Muestra botones de respuesta rápida y devuelve la opción elegida. */
+function ask(r, options, opt = {}) {
+  return new Promise((resolve, reject) => {
+    pending = { reject };
+    openTray(opt.label || "Tocá una opción", box => {
+      options.forEach((o, i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        if (o.primary) b.className = "primary";
+        b.style.animationDelay = (i * 45) + "ms";
+        b.innerHTML = esc(o.label) + (o.sub ? `<small>${esc(o.sub)}</small>` : "");
+        b.addEventListener("click", async () => {
+          if (r !== RUN) return;
+          pending = null; closeTray();
+          try { if (!o.silent) await patient(r, o.echo || o.label); resolve(o.value !== undefined ? o.value : o.label); }
+          catch (e) { reject(e); }
+        }, { once: true });
+        box.appendChild(b);
+      });
+    }, "qr" + (opt.slots ? " slots" : ""));
+  });
+}
+
+function newRun() {
+  RUN++;
+  if (pending) { const p = pending; pending = null; p.reject(new Abort()); }
+  hideTyping(); closeTray(); composer.value = "";
+  return RUN;
+}
+function setNight(on) {
+  phone.classList.toggle("night", on);
+  $("#chat-status em").textContent = on ? "Fuera de horario · responde igual" : "En línea · Belgrano";
+}
+function resetChat(startClock = 615) {
+  msgs.innerHTML = ""; clock = startClock; setNight(false);
+  addNote(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Tus datos se usan solo para gestionar tus turnos. Este chat no da indicaciones médicas.</span>`, "privacy");
+}
+
+/* ===================== Selector de recorridos ===================== */
+const FLOWS = [
+  { n: 1, t: "Sacar un turno", d: "Motivo, profesional, día y hora. Confirmación al instante.", fn: flowBook },
+  { n: 2, t: "Cambiar o cancelar un turno", d: "El paciente reprograma o libera el horario solo.", fn: flowChange },
+  { n: 3, t: "Recordatorio del día anterior", d: "El consultorio avisa y el paciente confirma con un toque.", fn: flowReminder },
+  { n: 4, t: "Consulta fuera de horario", d: "A la noche el chat responde y deja el turno pedido.", fn: flowNight },
+  { n: 5, t: "Consulta clínica", d: "Si hay un síntoma, el chat no opina y pasa a una persona.", fn: flowClinical }
+];
+const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+
+function showPicker(label = "Elegí un recorrido para probar") {
+  newRun();
+  openTray(label, box => {
+    FLOWS.forEach((f, i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.style.animationDelay = (i * 50) + "ms";
+      b.innerHTML = `<span class="num">${f.n}</span><span><b>${f.t}</b><span class="d">${f.d}</span></span><span class="chev">${CHEV}</span>`;
+      b.addEventListener("click", () => startFlow(f));
+      box.appendChild(b);
+    });
+  }, "picker");
+}
+function startFlow(f) {
+  const r = newRun();
+  resetChat();
+  f.fn(r).catch(e => { if (!(e instanceof Abort)) console.error(e); });
+}
+function endFlow(r, msg = "Fin del recorrido") {
+  guard(r);
+  openTray(msg, box => {
+    const a = document.createElement("button"); a.className = "primary"; a.type = "button";
+    a.innerHTML = "Ver el panel del consultorio";
+    a.addEventListener("click", () => go("panel"));
+    const b = document.createElement("button"); b.type = "button";
+    b.innerHTML = "Probar otro recorrido";
+    b.addEventListener("click", () => showPicker());
+    box.append(a, b);
+  });
+}
+
+/* ===================== Agenda: lógica ===================== */
+const active = a => a.status !== "off";
+const isFree = (day, time, prof, exceptId) => !S.appts.some(a => active(a) && a.id !== exceptId && a.day === day && a.time === time && a.prof === prof);
+const freeTimes = (day, prof, exceptId) => TIMES.filter(t => prof === "any" ? (isFree(day, t, "mendez") || isFree(day, t, "ferrari")) : isFree(day, t, prof, exceptId));
+const pickProf = (day, time) => isFree(day, time, "mendez") ? "mendez" : "ferrari";
+let uid = 0;
+
+function apptCard(a, title, tone = "") {
+  const icon = { ok: "✅", warn: "🔔", night: "🌙", off: "✖️" }[tone] || "🗓️";
+  return `<div class="tcard ${tone}"><div class="tcard-h">${icon} ${title}</div><ul>
+    <li><i>📅</i>${cap(WEEK[a.day].long)}</li>
+    <li><i>🕘</i>${a.time} h</li>
+    <li><i>🧑‍⚕️</i>${PROFS[a.prof].name}</li>
+    <li><i>🦷</i>${esc(a.reason)}</li>
+    <li><i>📍</i>${ADDRESS}</li></ul></div>`;
+}
+
+/* ===================== Recorrido 1 y 4: sacar turno ===================== */
+async function bookingSteps(r, { name, night, reason }) {
+  if (!reason) {
+    await bot(r, "¿Cuál es el motivo de la consulta? Con el motivo general alcanza, no hace falta dar detalles.");
+    reason = await ask(r, REASONS.map(x => ({ label: x })), { label: "Motivo general" });
+  }
+  let prof;
+  if (night) prof = "any";
+  else {
+    await bot(r, "¿Con quién te querés atender?");
+    prof = await ask(r, [
+      { label: PROFS.mendez.name, sub: PROFS.mendez.role, value: "mendez" },
+      { label: PROFS.ferrari.name, sub: PROFS.ferrari.role, value: "ferrari" },
+      { label: "Me da igual", sub: "El primer horario libre", value: "any" }
+    ], { label: "Profesional" });
+  }
+  while (true) {
+    await bot(r, "Estos son los días con lugar la semana que viene:");
+    const days = WEEK.filter(d => freeTimes(d.idx, prof).length);
+    const day = await ask(r, days.map(d => ({ label: d.short + " " + d.month.slice(0,3) + ".", sub: freeTimes(d.idx, prof).length + " horarios", value: d.idx, echo: cap(d.long) })), { label: "Día" });
+    const times = freeTimes(day, prof);
+    const shown = pickSpread(times, 6);
+    await bot(r, `Horarios libres para el <b>${WEEK[day].long}</b>:`);
+    const time = await ask(r, shown.map(t => ({ label: t, value: t, echo: t + " h" })), { label: "Horario", slots: true });
+    const p = prof === "any" ? pickProf(day, time) : prof;
+    const draft = { day, time, prof: p, reason, name };
+    await bot(r, apptCard(draft, night ? "Turno a pedir" : "Revisá tu turno") + `<span class="after">A nombre de <b>${esc(name)}</b>. ¿Lo ${night ? "dejo pedido" : "confirmo"}?</span>`, { card: true });
+    const ok = await ask(r, [
+      { label: night ? "Sí, dejarlo pedido" : "Sí, confirmar", value: true, primary: true },
+      { label: "Elegir otro día u horario", value: false }
+    ]);
+    if (ok) return draft;
+  }
+}
+function pickSpread(arr, n) {
+  if (arr.length <= n) return arr;
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(arr[Math.round(i * (arr.length - 1) / (n - 1))]);
+  return [...new Set(out)];
+}
+
+async function flowBook(r) {
+  clock = 615;
+  addDivider("Hoy");
+  await patient(r, "Hola! Quería sacar un turno", { typed: true });
+  await bot(r, "¡Hola, Lucía! 👋 Soy el asistente de turnos del <b>Consultorio Dental Ejemplo</b>. Te ayudo a sacar tu turno en un minuto.");
+  const d = await bookingSteps(r, { name: "Lucía Fernández" });
+  const a = { ...d, id: "n" + (++uid), status: "ok", via: "chat" };
+  S.appts.push(a);
+  bumpReport("booked"); bumpReport("confirmed");
+  notify(a.id, "agenda", a.day, "Turno nuevo agregado a la agenda");
+  await bot(r, apptCard(a, "¡Turno confirmado!", "ok"), { card: true });
+  await bot(r, "Un día antes te mandamos un recordatorio por acá. Si necesitás cambiarlo, escribinos cuando quieras. ¡Te esperamos! 😊");
+  endFlow(r, "Listo: el turno ya está en la agenda del consultorio");
+}
+
+async function flowNight(r) {
+  setNight(true);
+  clock = 23 * 60 + 47;
+  addDivider("Hoy · 23:47");
+  await patient(r, "Hola, ¿están atendiendo? Necesitaría un turno para una limpieza", { typed: true });
+  await bot(r, "¡Hola, Martín! 🌙 El consultorio ahora está cerrado (atendemos de lunes a viernes, de 9 a 19 h), pero te dejo el turno pedido ya mismo.");
+  const d = await bookingSteps(r, { name: "Martín Sosa", night: true, reason: "Control y limpieza" });
+  const a = { ...d, id: "n" + (++uid), status: "night", via: "night" };
+  S.appts.push(a);
+  bumpReport("outOfHours"); bumpReport("booked");
+  notify(a.id, "agenda", a.day, "Turno pedido fuera de horario");
+  await bot(r, apptCard(a, "Turno pedido", "night"), { card: true });
+  await bot(r, "Listo ✅ Mañana a primera hora el equipo del consultorio lo revisa y te lo confirma por este mismo chat. ¡Que descanses!");
+  endFlow(r, "El turno quedó pedido aunque el consultorio estaba cerrado");
+}
+
+/* ===================== Recorrido 2: cambiar o cancelar ===================== */
+async function rescheduleSteps(r, a, who) {
+  await bot(r, `Estos horarios están libres con ${PROFS[a.prof].short}:`);
+  const opts = [];
+  for (const d of WEEK) {
+    if (d.idx === a.day) continue;
+    const t = freeTimes(d.idx, a.prof, a.id);
+    const near = t.find(x => x >= a.time) || t[0];
+    if (near) opts.push({ label: `${d.short} · ${near}`, sub: cap(d.dayName), value: { day: d.idx, time: near }, echo: `${cap(d.long)} a las ${near}` });
+    if (opts.length === 4) break;
+  }
+  const choice = await ask(r, opts, { label: "Nuevo horario", slots: true });
+  a.day = choice.day; a.time = choice.time; a.status = "ok"; a.moved = true;
+  bumpReport("changes");
+  notify(a.id, "agenda", a.day, "Turno reprogramado por chat");
+  await bot(r, apptCard(a, "Turno cambiado", "ok"), { card: true });
+  await bot(r, `¡Listo, ${who}! El horario anterior quedó libre para otro paciente.`);
+}
+
+async function flowChange(r) {
+  clock = 9 * 60 + 12;
+  addDivider("Hoy");
+  await patient(r, "Hola, necesito cambiar mi turno", { typed: true });
+  let a = S.appts.find(x => x.id === "diego" && active(x));
+  if (!a) {
+    await bot(r, "Hola, Diego. No encontré turnos activos asociados a este número. ¿Querés sacar uno nuevo?");
+    await ask(r, [{ label: "Sí, sacar un turno", primary: true }]);
+    const d = await bookingSteps(r, { name: "Diego Pereyra" });
+    const n = { ...d, id: "diego", status: "ok", via: "chat" };
+    S.appts = S.appts.filter(x => x.id !== "diego"); S.appts.push(n);
+    bumpReport("booked"); bumpReport("confirmed");
+    notify(n.id, "agenda", n.day, "Turno nuevo agregado a la agenda");
+    await bot(r, apptCard(n, "¡Turno confirmado!", "ok"), { card: true });
+    return endFlow(r);
+  }
+  await bot(r, "Hola, Diego 👋 Por tu número encontré este turno:");
+  await bot(r, apptCard(a, "Tu próximo turno"), { card: true, delay: 500 });
+  await bot(r, "¿Qué querés hacer?");
+  let what = await ask(r, [
+    { label: "Cambiar día u horario", value: "move" },
+    { label: "Cancelar el turno", value: "cancel" },
+    { label: "Dejarlo como está", value: "keep" }
+  ]);
+  if (what === "cancel") {
+    await bot(r, "Entendido. Antes de cancelarlo: ¿preferís pasarlo a otro día?");
+    what = await ask(r, [
+      { label: "Sí, mejor lo cambio", value: "move" },
+      { label: "No, cancelarlo igual", value: "cancel" }
+    ]);
+  }
+  if (what === "move") {
+    await rescheduleSteps(r, a, "Diego");
+    return endFlow(r, "La agenda del consultorio ya muestra el cambio");
+  }
+  if (what === "cancel") {
+    a.status = "off";
+    bumpReport("changes");
+    notify(a.id, "agenda", a.day, "Turno cancelado: el horario quedó libre");
+    await bot(r, apptCard(a, "Turno cancelado", "off"), { card: true });
+    await bot(r, "Listo, tu turno quedó cancelado y el horario se liberó para otro paciente. Cuando quieras sacar uno nuevo, escribinos por acá. ¡Gracias por avisar!");
+    return endFlow(r, "El horario quedó libre en la agenda");
+  }
+  await bot(r, "¡Perfecto! Queda como está. Te esperamos 😊");
+  endFlow(r);
+}
+
+/* ===================== Recorrido 3: recordatorio ===================== */
+async function flowReminder(r) {
+  let a = S.appts.find(x => x.id === "sofia");
+  if (!a || a.status !== "pend") {
+    // se restaura el turno de ejemplo para poder repetir el recorrido
+    const day = 1, time = isFree(1, "10:00", "mendez", "sofia") ? "10:00" : freeTimes(1, "mendez", "sofia")[0];
+    if (a) Object.assign(a, { day, time, status: "pend", moved: false });
+    else { a = { id: "sofia", day, time, name: "Sofía Herrera", reason: "Control y limpieza", prof: "mendez", status: "pend", via: "desk" }; S.appts.push(a); }
+    renderPanel();
+  }
+  clock = 10 * 60;
+  const prev = WEEK[a.day - 1] ? cap(WEEK[a.day - 1].long) : "El día anterior";
+  addDivider(`${prev} · 10:00`);
+  addNote("El consultorio envía este mensaje solo, un día antes de cada turno.", "demo");
+  await wait(500, r);
+  await bot(r, `Hola, Sofía 👋 Te recordamos tu turno de <b>mañana</b> en el Consultorio Dental Ejemplo:`);
+  await bot(r, apptCard(a, "Recordatorio de turno", "warn") + `<span class="after">¿Nos confirmás si venís?</span>`, { card: true, delay: 500 });
+  const ans = await ask(r, [
+    { label: "Confirmo, voy ✅", value: "yes", primary: true },
+    { label: "Necesito cambiarlo", value: "move" },
+    { label: "No voy a poder ir", value: "no" }
+  ], { label: "Respuesta del paciente" });
+  if (ans === "yes") {
+    a.status = "ok";
+    bumpReport("confirmed");
+    notify(a.id, "agenda", a.day, "Turno confirmado por la paciente");
+    await bot(r, `¡Gracias por confirmar, Sofía! Te esperamos mañana a las ${a.time} h. 📍 ${ADDRESS}.`);
+    return endFlow(r, "En la agenda el turno pasó a «Confirmado»");
+  }
+  if (ans === "move") {
+    await rescheduleSteps(r, a, "Sofía");
+    return endFlow(r, "La agenda del consultorio ya muestra el cambio");
+  }
+  a.status = "off";
+  bumpReport("changes");
+  notify(a.id, "agenda", a.day, "Turno cancelado: el horario quedó libre");
+  await bot(r, "Gracias por avisar con tiempo, Sofía. Cancelamos el turno y el horario queda libre para otro paciente.");
+  await bot(r, "¿Querés que te busquemos otro día?");
+  const again = await ask(r, [{ label: "Sí, buscar otro día", value: true, primary: true }, { label: "Ahora no, gracias", value: false }]);
+  if (again) {
+    a.status = "pend";
+    await rescheduleSteps(r, a, "Sofía");
+  } else {
+    await bot(r, "¡Dale! Cuando quieras, escribinos por acá. 😊");
+  }
+  endFlow(r);
+}
+
+/* ===================== Recorrido 5: consulta clínica ===================== */
+async function flowClinical(r) {
+  clock = 11 * 60 + 5;
+  addDivider("Hoy");
+  await patient(r, "Hola, me duele mucho una muela desde ayer y tengo la encía hinchada. ¿Qué me puedo tomar?", { typed: true });
+  await bot(r, "Gracias por escribirnos, Carla. Por este chat no podemos darte indicaciones sobre síntomas ni tratamientos: eso lo tiene que ver el equipo del consultorio.");
+  await bot(r, "Ya le pasé tu conversación a una persona del consultorio para que te responda. <b>No hace falta que mandes fotos ni más detalles por acá.</b>");
+  addNote("👤 Conversación derivada a una persona del consultorio", "handoff");
+  S.handoffs.unshift({ id: "h" + (++uid) + "c", name: "Carla Ríos", reason: "Consulta clínica", note: "Escribió por un síntoma. El chat no dio indicaciones ni pidió detalles, y la pasó al equipo.", when: "Hace instantes", status: "new" });
+  bumpReport("handoffs");
+  notify(S.handoffs[0].id, "personas", null, "Conversación derivada a una persona");
+  await wait(500, r);
+  await bot(r, `Si sentís que es una urgencia, podés llamar al consultorio al ${PHONE}.`);
+  endFlow(r, "La charla ya figura en el panel para que la tome una persona");
+}
+
+/* ===================== Panel ===================== */
+const STATUS = {
+  ok:    { t: "Confirmado", c: "c-ok", cls: "" },
+  pend:  { t: "Sin confirmar", c: "c-pend", cls: "st-pend" },
+  night: { t: "Pedido fuera de horario", c: "c-night", cls: "st-night" },
+  off:   { t: "Cancelado · horario libre", c: "c-off", cls: "st-off" }
+};
+const CHAT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.2A8.5 8.5 0 1 1 21 12z"/></svg>';
+const TAG = '<span class="tag">Datos de ejemplo</span>';
+
+function renderPanel() {
+  const act = S.appts.filter(active);
+  const pendN = act.filter(a => a.status !== "ok").length;
+  const needN = S.handoffs.filter(h => h.status === "new").length;
+  const w0 = WEEK[0], w4 = WEEK[4];
+  const range = w0.month === w4.month ? `${w0.n} al ${w4.n} de ${w4.month}` : `${w0.n} de ${w0.month} al ${w4.n} de ${w4.month}`;
+
+  const dayCols = WEEK.map(d => {
+    const list = S.appts.filter(a => a.day === d.idx).sort((a, b) => a.time.localeCompare(b.time) || (a.status === "off") - (b.status === "off"));
+    const items = list.map(a => {
+      const st = STATUS[a.status];
+      const via = a.moved ? "Reprogramado por chat" : ({ night: "Pedido por chat de noche", desk: "Cargado por recepción" }[a.via] || "Sacado por chat");
+      return `<div class="appt ${st.cls} ${S.fresh.has(a.id) ? "is-new" : ""}" data-id="${a.id}">
+        <div class="a-top"><span class="a-time">${a.time}</span>${S.fresh.has(a.id) ? '<span class="chip c-new">Nuevo</span>' : ""}</div>
+        <div class="a-name">${esc(a.name)}</div>
+        <div class="a-sub">${esc(a.reason)} · ${PROFS[a.prof].short}</div>
+        <div class="a-foot"><span class="chip ${st.c}">${st.t}</span><span class="a-src">${CHAT_ICON}${via}</span></div>
+        ${a.status === "night" ? `<button class="a-act" data-confirm="${a.id}">Confirmar turno</button>` : ""}
+      </div>`;
+    }).join("");
+    return `<div class="day ${S.selDay === d.idx ? "sel" : ""}" data-day="${d.idx}">
+      <div class="day-h">${DAYS_S[d.idx]} ${d.n}<span>${plural(list.filter(active).length)}</span></div>
+      <div class="appts">${items || '<div class="empty">Sin turnos</div>'}</div></div>`;
+  }).join("");
+
+  const tabs = WEEK.map(d => {
+    const n = S.appts.filter(a => a.day === d.idx && active(a)).length;
+    const hasNew = S.appts.some(a => a.day === d.idx && S.fresh.has(a.id));
+    return `<button role="tab" aria-selected="${S.selDay === d.idx}" data-sel="${d.idx}" class="${hasNew ? "has-new" : ""}"><span>${DAYS_S[d.idx]}</span><b>${d.n}</b><em>${plural(n)}</em></button>`;
+  }).join("");
+
+  const hl = S.handoffs.map(h => `
+    <div class="hitem ${h.status !== "new" ? "done" : ""} ${S.fresh.has(h.id) ? "is-new" : ""}">
+      <div class="h-av">${initials(h.name)}</div>
+      <div class="h-body">
+        <div class="h-top"><b>${esc(h.name)}</b><span class="chip ${h.reason === "Consulta clínica" ? "c-night" : "c-care"}">${h.reason}</span><span class="h-when">${h.when}</span></div>
+        <div class="h-note">${esc(h.note)}</div>
+        <div class="h-act">${h.status === "new"
+          ? `<button class="btn" data-take="${h.id}">Tomar conversación</button><span class="chip c-new">Necesita a una persona</span>`
+          : `<span class="h-status">✓ La está atendiendo Recepción</span>`}</div>
+      </div>
+    </div>`).join("");
+
+  const R = S.report, B = S.base;
+  const delta = k => R[k] > B[k] ? `<span class="delta show">+${R[k] - B[k]} en esta demo</span>` : "";
+  $("#panel").innerHTML = `
+    <div class="panel-head">
+      <div><h1>Consultorio Dental Ejemplo</h1><p>Panel del consultorio · Belgrano</p></div>
+      <span class="tag">Demo: datos ficticios</span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="k-l">Turnos esta semana</div><div class="k-v" data-k="week">${act.length}</div>${TAG}</div>
+      <div class="kpi"><div class="k-l">Por confirmar</div><div class="k-v" data-k="pend">${pendN}</div>${TAG}</div>
+      <div class="kpi alert"><div class="k-l">Necesitan a una persona</div><div class="k-v" data-k="need">${needN}</div>${TAG}</div>
+    </div>
+    <nav class="subnav" aria-label="Secciones del panel">
+      <a href="#agenda">Agenda</a><a href="#personas">Necesitan a una persona${needN ? ` (${needN})` : ""}</a><a href="#informe">Informe mensual</a>
+    </nav>
+    <section class="section" id="agenda">
+      <div class="sec-h"><div><h2>Agenda de la semana</h2><p>Semana del ${range} · se actualiza con cada chat</p></div>${TAG}</div>
+      <div class="legend" style="margin-bottom:12px"><span class="chip c-ok">Confirmado</span><span class="chip c-pend">Sin confirmar</span><span class="chip c-night">Pedido fuera de horario</span><span class="chip c-off">Cancelado</span></div>
+      <div class="daytabs" role="tablist" aria-label="Días">${tabs}</div>
+      <div class="week">${dayCols}</div>
+    </section>
+    <section class="section" id="personas">
+      <div class="sec-h"><div><h2>Conversaciones que necesitan a una persona</h2><p>El chat solo gestiona turnos. Todo lo demás lo deriva al equipo.</p></div>${TAG}</div>
+      <div class="hlist">${hl || '<div class="empty">No hay conversaciones pendientes</div>'}</div>
+    </section>
+    <section class="section" id="informe">
+      <div class="sec-h"><div><h2>Informe mensual · ${cap(MONTH_NOW)}</h2><p>Resumen de lo que pasó en el chat este mes</p></div>${TAG}</div>
+      <div class="report-grid">
+        <div class="big night"><div class="b-icon">🌙</div><div class="b-l">Consultas fuera de horario</div>
+          <div class="b-v" data-r="outOfHours">${R.outOfHours}</div>
+          <div class="b-d">Mensajes que llegaron con el consultorio cerrado y se respondieron al instante.${delta("outOfHours")}</div>${TAG}</div>
+        <div class="big ok"><div class="b-icon">✅</div><div class="b-l">Turnos confirmados</div>
+          <div class="b-v" data-r="confirmed">${R.confirmed}</div>
+          <div class="b-d">Turnos que los pacientes confirmaron por chat.${delta("confirmed")}</div>${TAG}</div>
+      </div>
+      <div class="minis">
+        <div class="mini"><div class="m-v" data-r="booked">${R.booked}</div><div class="m-l">Turnos sacados por chat</div>${TAG}</div>
+        <div class="mini"><div class="m-v" data-r="changes">${R.changes}</div><div class="m-l">Cambios y cancelaciones</div>${TAG}</div>
+        <div class="mini"><div class="m-v" data-r="handoffs">${R.handoffs}</div><div class="m-l">Derivadas a una persona</div>${TAG}</div>
+      </div>
+      <p class="foot-note">Todos los números de este panel son datos de ejemplo para la demo.</p>
+    </section>`;
+}
+
+$("#panel").addEventListener("click", e => {
+  const sel = e.target.closest("[data-sel]");
+  if (sel) { S.selDay = +sel.dataset.sel; renderPanel(); return; }
+  const take = e.target.closest("[data-take]");
+  if (take) { const h = S.handoffs.find(x => x.id === take.dataset.take); if (h) { h.status = "taken"; renderPanel(); } return; }
+  const conf = e.target.closest("[data-confirm]");
+  if (conf) {
+    const a = S.appts.find(x => x.id === conf.dataset.confirm);
+    if (a) { a.status = "ok"; S.report.confirmed++; renderPanel(); bumpEl("confirmed"); }
+  }
+});
+
+/* ===================== Avisos entre pantallas ===================== */
+let toastTimer;
+function toast(text, withBtn = true) {
+  $("#toast-text").textContent = text;
+  $("#toast-btn").hidden = !withBtn;
+  const t = $("#toast"); t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3000);
+}
+function notify(id, section, day, text) {
+  S.fresh.add(id);
+  S.unseen++;
+  S.focus = { section, id };
+  if (day !== null && day !== undefined) S.selDay = day;
+  renderPanel(); updateBadge(); toast(text);
+}
+const bumped = new Set();
+function bumpReport(k) { S.report[k]++; bumped.add(k); }
+function bumpEl(k) { const el = document.querySelector(`[data-r="${k}"]`); if (el) { el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); } }
+function updateBadge() { const b = $("#badge"); b.textContent = S.unseen; b.classList.toggle("show", S.unseen > 0); }
+
+/* ===================== Navegación ===================== */
+let view = "chat";
+function go(v) {
+  if (v === view) return;
+  view = v;
+  $("#switch").dataset.active = v;
+  $("#tab-chat").setAttribute("aria-selected", v === "chat");
+  $("#tab-panel").setAttribute("aria-selected", v === "panel");
+  $("#view-chat").classList.toggle("active", v === "chat");
+  $("#view-panel").classList.toggle("active", v === "panel");
+  $("#toast").classList.remove("show");
+  if (v === "panel") {
+    S.unseen = 0; updateBadge();
+    renderPanel();
+    const vp = $("#view-panel");
+    const f = S.focus; S.focus = null;
+    setTimeout(() => {
+      bumped.forEach(bumpEl); bumped.clear();
+      if (f) {
+        const target = document.querySelector(f.section === "agenda" ? `.appt[data-id="${f.id}"]` : `#personas`);
+        if (target) {
+          const top = target.getBoundingClientRect().top - vp.getBoundingClientRect().top + vp.scrollTop - (f.section === "agenda" ? 140 : 60);
+          vp.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+        }
+      } else vp.scrollTo({ top: 0, behavior: "smooth" });
+    }, 380);
+    clearTimeout(go.t);
+    go.t = setTimeout(() => { S.fresh.clear(); }, 6000);
+  } else scrollDown();
+}
+document.querySelectorAll("[data-view]").forEach(b => b.addEventListener("click", () => go(b.dataset.view)));
+document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
+$("#toast-btn").addEventListener("click", () => go("panel"));
+$("#open-picker").addEventListener("click", () => showPicker("¿Qué recorrido querés probar?"));
+composer.addEventListener("focus", () => { composer.blur(); toast("En la demo se responde con los botones de abajo 👇", false); });
+$("#send").addEventListener("click", () => toast("En la demo se responde con los botones de abajo 👇", false));
+
+function restart() {
+  newRun();
+  S = seed(); S.base = { ...S.report }; uid = 0; bumped.clear();
+  updateBadge(); renderPanel();
+  $("#toast").classList.remove("show");
+  go("chat");
+  boot();
+}
+$("#restart").addEventListener("click", restart);
+
+/* evita que el contenedor quede corrido de costado al tocar botones */
+const viewsEl = $(".views");
+viewsEl.addEventListener("scroll", () => { if (viewsEl.scrollLeft || viewsEl.scrollTop) { viewsEl.scrollLeft = 0; viewsEl.scrollTop = 0; } });
+
+/* ===================== Inicio ===================== */
+function boot() {
+  resetChat();
+  addDivider("Hoy");
+  addMsg("in", "¡Hola! 👋 Este es el chat de turnos del <b>Consultorio Dental Ejemplo</b>, en Belgrano. Por acá podés sacar, cambiar o cancelar tu turno a cualquier hora.");
+  showPicker();
+  setTimeout(() => { msgs.scrollTop = 0; }, 80);
+}
+renderPanel();
+boot();
+})();
+</script>
+</body>
+</html>
